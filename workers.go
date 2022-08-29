@@ -36,6 +36,9 @@ type WorkerScriptParams struct {
 	// Bindings should be a map where the keys are the binding name, and the
 	// values are the binding content
 	Bindings map[string]WorkerBinding
+
+	CompatibilityDate  string
+	CompatibilityFlags []string
 }
 
 // WorkerRoute is used to map traffic matching a URL pattern to a workers
@@ -693,11 +696,14 @@ func formatMultipartBody(params *WorkerScriptParams) (string, []byte, error) {
 	// Write metadata part
 	var scriptPartName string
 	meta := struct {
-		BodyPart   string              `json:"body_part,omitempty"`
-		MainModule string              `json:"main_module,omitempty"`
-		Bindings   []workerBindingMeta `json:"bindings"`
+		BodyPart            string              `json:"body_part,omitempty"`
+		MainModule          string              `json:"main_module,omitempty"`
+		Bindings            []workerBindingMeta `json:"bindings"`
+		CompatibilityDate   string				`json:"compatibility_date,omitempty"`
+		CompatibilityFlags  []string            `json:"compatibility_flags,omitempty"`
 	}{
 		Bindings: make([]workerBindingMeta, 0, len(params.Bindings)),
+		CompatibilityFlags: make([]string, len(params.CompatibilityFlags)),
 	}
 
 	if params.Module {
@@ -718,6 +724,9 @@ func formatMultipartBody(params *WorkerScriptParams) (string, []byte, error) {
 		meta.Bindings = append(meta.Bindings, bindingMeta)
 		bodyWriters = append(bodyWriters, bodyWriter)
 	}
+
+	meta.CompatibilityDate = params.CompatibilityDate;
+	copy(meta.CompatibilityFlags, params.CompatibilityFlags);
 
 	var hdr = textproto.MIMEHeader{}
 	hdr.Set("content-disposition", fmt.Sprintf(`form-data; name="%s"`, "metadata"))
